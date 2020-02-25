@@ -5,28 +5,12 @@
     name: "*"
     state: latest
 - 
-  name: "Set timezone to America/Chicago"
-  timezone: 
-    name: America/Chicago
-- 
-  name: "Installing EPEL Repo"
-  yum: 
-    name: epel-release
-    state: present
-- 
-  name: "Installing RPM Fusion Repo"
-  yum: 
-    name: "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm"
-    state: present
-- 
-  name: "Installing NGINX Repo"
-  yum: 
-    name: "http://nginx.org/packages/centos/8/x86_64/RPMS/nginx-1.16.1-1.el8.ngx.x86_64.rpm"
-    state: present
-- 
   name: "Installing Dependencies for Guacamole"
   yum: 
     name: 
+      - epel-release
+      - "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm"
+      - "http://nginx.org/packages/centos/8/x86_64/RPMS/nginx-1.16.1-1.el8.ngx.x86_64.rpm"
       - "https://www.alteeve.com/repo/el8/RPMS/x86_64/libssh2-devel-1.8.0-8.el8.1.x86_64.rpm"
       - "https://www.alteeve.com/repo/el8/RPMS/x86_64/libssh2-1.8.0-8.el8.1.x86_64.rpm"
       - "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
@@ -45,10 +29,6 @@
       - curl
       - git
     state: present
-- 
-  name: "Install the MySQL-python through pip"
-  pip: 
-    name: mysql-connector-python
 -
   name: "Install the MySQL-python through pip"
   pip:
@@ -208,30 +188,6 @@
     state: link
   name: "Creating Required Symlinks for Guacamole"
   with_items: 
-#    - 
-#      dest: /usr/lib64/freerdp/guacai.la
-#      path: /usr/local/lib/freerdp/guacai.la
-#    - 
-#      dest: /usr/lib64/freerdp/guacai.so
-#      path: /usr/local/lib/freerdp/guacai.so
-#    - 
-#      dest: /usr/lib64/freerdp/guacdr.la
-#      path: /usr/local/lib/freerdp/guacdr.la
-#    - 
-#      dest: /usr/lib64/freerdp/guacdr.so
-#      path: /usr/local/lib/freerdp/guacdr.so
-#    - 
-#      dest: /usr/lib64/freerdp/guacsnd.la
-#      path: /usr/local/lib/freerdp/guacsnd.la
-#    - 
-#      dest: /usr/lib64/freerdp/guacsnd.so
-#      path: /usr/local/lib/freerdp/guacsnd.so
-#    - 
-#      dest: /usr/lib64/freerdp/guacsvc.la
-#      path: /usr/local/lib/freerdp/guacsvc.la
-#    - 
-#      dest: /usr/lib64/freerdp/guacsvc.so
-#      path: /usr/local/lib/freerdp/guacsvc.so
     - 
       dest: /usr/share/tomcat/webapps/guacamole.war
       path: /var/lib/guacamole/guacamole.war
@@ -293,13 +249,6 @@
   with_items: 
     - 001-create-schema.sql
     - 002-create-admin-user.sql
-#- 
-#  lineinfile: 
-#    insertbefore: socket=
-#    line: default-time-zone=America/Chicago
-#    path: /etc/my.cnf
-#    regexp: default-time-zone
-#  name: "Setting default-time-zone"
 - 
   name: "Restarting MariaDB"
   systemd: 
