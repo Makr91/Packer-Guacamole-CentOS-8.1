@@ -373,6 +373,10 @@
     enabled: true
     name: firewalld
     state: restarted
+- name: Removing Old Guacd Service File
+  file:
+    path: /etc/systemd/system/guacd.service
+    state: absent
 -
   blockinfile:
     block: |
@@ -390,4 +394,4 @@
       WantedBy=multi-user.target
     create: true
     path: /etc/systemd/system/guacd.service
-  name: "Changing Default Guacamole User"
+  name: "Changing Default Guacamole User for Service File"
