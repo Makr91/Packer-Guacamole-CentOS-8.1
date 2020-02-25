@@ -1,0 +1,393 @@
+--- 
+- 
+  name: "upgrade all packages"
+  yum: 
+    name: "*"
+    state: latest
+- 
+  name: "Set timezone to America/Chicago"
+  timezone: 
+    name: America/Chicago
+- 
+  name: "Installing EPEL Repo"
+  yum: 
+    name: epel-release
+    state: present
+- 
+  name: "Installing RPM Fusion Repo"
+  yum: 
+    name: "https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm"
+    state: present
+- 
+  name: "Installing NGINX Repo"
+  yum: 
+    name: "http://nginx.org/packages/centos/8/x86_64/RPMS/nginx-1.16.1-1.el8.ngx.x86_64.rpm"
+    state: present
+- 
+  name: "Installing Dependencies for Guacamole"
+  yum: 
+    name: 
+      - "https://www.alteeve.com/repo/el8/RPMS/x86_64/libssh2-devel-1.8.0-8.el8.1.x86_64.rpm"
+      - "https://www.alteeve.com/repo/el8/RPMS/x86_64/libssh2-1.8.0-8.el8.1.x86_64.rpm"
+      - "https://rpms.remirepo.net/enterprise/remi-release-8.rpm"
+      - "http://rpms.remirepo.net/enterprise/8/remi/x86_64/libwebsockets-2.4.2-1.el8.remi.x86_64.rpm"
+-
+  name: "Install basic packages"
+  package: 
+    name: 
+      - vim
+      - bash-completion
+      - tmux
+      - tree
+      - htop
+      - wget
+      - unzip
+      - curl
+      - git
+    state: present
+- 
+  name: "Install the MySQL-python through pip"
+  pip: 
+    name: mysql-connector-python
+-
+  name: "Install the MySQL-python through pip"
+  pip:
+    name: PyMySQL
+- 
+  name: "Installing Dependencies for Guacamole"
+  yum: 
+    name: 
+      - java-1.8.0-openjdk-devel
+      - dialog
+      - setroubleshoot
+      - pulseaudio-libs-devel
+      - python3-policycoreutils
+      - nginx
+      - mariadb-server
+      - mariadb
+      - libwebp-devel
+      - gnu-free-mono-fonts
+      - ffmpeg-devel
+      - freerdp-plugins
+      - freerdp-devel
+      - freerdp
+      - cairo-devel
+      - libvorbis-devel
+      - openssl-devel
+      - libtool
+      - libvncserver-devel
+      - libpng-devel
+      - uuid-devel
+      - pango-devel
+      - gcc
+      - nano
+      - wget
+      - net-tools
+- 
+  get_url: 
+    dest: /opt/apache-maven-3.6.3-bin.tar.gz
+    url: "https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz"
+  name: "Downloading Maven"
+- 
+  name: "Unpacking Maven"
+  unarchive: 
+    copy: false
+    dest: /opt/
+    src: /opt/apache-maven-3.6.3-bin.tar.gz
+- 
+  file: 
+    dest: /opt/maven
+    src: /opt/apache-maven-3.6.3
+    state: link
+  name: "Creating Maven Symlink"
+- 
+  file: 
+    path: /opt/apache-maven-3.6.3-bin.tar.gz
+    state: absent
+  name: "Removing source files"
+- 
+  name: "Adding Maven to Environment Variables"
+  shell: "export PATH=/opt/maven/bin:${PATH}"
+- 
+  name: "Checking Build Environment"
+  register: folder_stats
+  stat: 
+    path: "{{item}}"
+  with_items: 
+    - 
+      - /etc/guacamole
+      - /usr/local/src/guacamole/1.1.0/client
+      - /usr/local/src/guacamole/1.1.0/selinux
+      - /var/lib/guacamole/extensions
+      - /var/lib/guacamole/lib
+      - /usr/share/tomcat/.guacamole/
+- 
+  file: 
+    group: root
+    mode: 493
+    owner: root
+    path: "{{item.item}}"
+    state: directory
+  name: "Creating Directories"
+  when: "item.stat.exists == false"
+  with_items: 
+    - "{{folder_stats.results}}"
+- 
+  get_url: 
+    dest: /usr/local/src/guacamole/1.1.0/mysql-connector-java-8.0.16.tar.gz
+    url: "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-8.0.16.tar.gz"
+  name: "Downloading MySQL Connector"
+- 
+  git: 
+    dest: /usr/local/src/guacamole/1.1.0/guacamole-server
+    repo: "git://github.com/apache/guacamole-server.git"
+  name: "Downloading Guacamole Server"
+- 
+  git: 
+    dest: /usr/local/src/guacamole/1.1.0/guacamole-client
+    repo: "git://github.com/apache/guacamole-client.git"
+  name: "Downloading Guacamole Client"
+- 
+  name: "Unpacking MySQL Connector"
+  unarchive: 
+    copy: false
+    dest: /var/lib/guacamole
+    src: /usr/local/src/guacamole/1.1.0/mysql-connector-java-8.0.16.tar.gz
+- 
+  command: "mv /var/lib/guacamole/mysql-connector-java-8.0.16/mysql-connector-java-8.0.16.jar /var/lib/guacamole/lib/mysql-connector-java-8.0.16.jar"
+  name: "Moving MySQL Connector to Extensions Library"
+- 
+  file: 
+    path: /usr/local/src/guacamole/1.1.0/mysql-connector-java-8.0.16.tar.gz
+    state: absent
+  name: "Removing source files"
+- 
+  name: "Installing Dependencies for Guacamole"
+  yum: 
+    name: 
+      - libjpeg-devel
+- 
+  args: 
+    chdir: /usr/local/src/guacamole/1.1.0/guacamole-server
+  name: "Preparing Guacamole Source for Compilation"
+  shell: " autoreconf -fi && ./configure --with-systemd-dir=/etc/systemd/system"
+- 
+  args: 
+    chdir: /usr/local/src/guacamole/1.1.0/guacamole-server
+  name: "Compiling Guacamole Server from Source "
+  shell: "make && make install && ldconfig"
+- 
+  args: 
+    chdir: /usr/local/src/guacamole/1.1.0/guacamole-client
+  name: "Building Guacamole Client"
+  shell: "/opt/maven/bin/mvn clean package"
+- 
+  command: "mv /usr/local/src/guacamole/1.1.0/guacamole-client/guacamole/target/guacamole-1.1.0.war /var/lib/guacamole/guacamole.war"
+  name: "Moving client to Guacamole Working Directory"
+- 
+  blockinfile: 
+    block: |
+        # Hostname and port of guacamole proxy
+        guacd-hostname: localhost
+        guacd-port: 4822
+        # MySQL properties
+        mysql-hostname: localhost
+        mysql-port: 3306
+        mysql-database: guac_db
+        mysql-username: guac_adm
+        mysql-password: Guac2019
+        mysql-default-max-connections-per-user: 0
+        mysql-default-max-group-connections-per-user: 0
+    create: true
+    path: /etc/guacamole/guacamole.properties
+  name: "Creating Guacamole Configuration File"
+- 
+  file: 
+    dest: "{{ item.dest }}"
+    src: "{{ item.path }}"
+    state: link
+  name: "Creating Required Symlinks for Guacamole"
+  with_items: 
+#    - 
+#      dest: /usr/lib64/freerdp/guacai.la
+#      path: /usr/local/lib/freerdp/guacai.la
+#    - 
+#      dest: /usr/lib64/freerdp/guacai.so
+#      path: /usr/local/lib/freerdp/guacai.so
+#    - 
+#      dest: /usr/lib64/freerdp/guacdr.la
+#      path: /usr/local/lib/freerdp/guacdr.la
+#    - 
+#      dest: /usr/lib64/freerdp/guacdr.so
+#      path: /usr/local/lib/freerdp/guacdr.so
+#    - 
+#      dest: /usr/lib64/freerdp/guacsnd.la
+#      path: /usr/local/lib/freerdp/guacsnd.la
+#    - 
+#      dest: /usr/lib64/freerdp/guacsnd.so
+#      path: /usr/local/lib/freerdp/guacsnd.so
+#    - 
+#      dest: /usr/lib64/freerdp/guacsvc.la
+#      path: /usr/local/lib/freerdp/guacsvc.la
+#    - 
+#      dest: /usr/lib64/freerdp/guacsvc.so
+#      path: /usr/local/lib/freerdp/guacsvc.so
+    - 
+      dest: /usr/share/tomcat/webapps/guacamole.war
+      path: /var/lib/guacamole/guacamole.war
+    - 
+      dest: /usr/share/tomcat/.guacamole/guacamole.properties
+      path: /etc/guacamole/guacamole.properties
+    - 
+      dest: /usr/share/tomcat/.guacamole/lib
+      path: /var/lib/guacamole/lib
+    - 
+      dest: /usr/share/tomcat/.guacamole/extensions
+      path: /var/lib/guacamole/extensions
+- 
+  command: "mv /usr/local/src/guacamole/1.1.0/guacamole-client/extensions/guacamole-auth-jdbc/modules/guacamole-auth-jdbc-mysql/target/guacamole-auth-jdbc-mysql-1.1.0.jar /var/lib/guacamole/extensions/"
+  name: "Moving JDBC Driver to Guacamole Working Directory"
+- 
+  name: "Restarting MariaDB"
+  systemd: 
+    enabled: true
+    name: mariadb
+    state: restarted
+- 
+  ignore_errors: true
+  mysql_user: "user=root password=\"Guac2019\" host=localhost"
+  name: "Sets the root password"
+- 
+  name: "Securing MariaDB"
+  shell: |
+      mysql_secure_installation <<EOF
+      Guac2019
+      n
+      y
+      y
+      y
+      y
+      EOF
+- 
+  mysql_db: 
+    login_password: Guac2019
+    login_user: root
+    name: guac_db
+    state: present
+  name: "Creating Guacamole Database 'guac_db'"
+- 
+  mysql_user: 
+    login_password: Guac2019
+    login_user: root
+    name: guac_adm
+    password: Guac2019
+    priv: "guac_db.*:ALL,GRANT"
+    state: present
+  name: "Create database user with name 'guac_adm' and password 'Guac2019' with all database privileges for 'guac_db'"
+- 
+  name: "Fixing bug with JDBC Driver over Version 8"
+  shell: "mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql -pGuac2019"
+- 
+  name: "Import Schema"
+  shell: "cat /usr/local/src/guacamole/1.1.0/guacamole-client/extensions/guacamole-auth-jdbc/modules/guacamole-auth-jdbc-mysql/schema/{{ item }} | mysql -u root -pGuac2019 -D guac_db"
+  with_items: 
+    - 001-create-schema.sql
+    - 002-create-admin-user.sql
+#- 
+#  lineinfile: 
+#    insertbefore: socket=
+#    line: default-time-zone=America/Chicago
+#    path: /etc/my.cnf
+#    regexp: default-time-zone
+#  name: "Setting default-time-zone"
+- 
+  name: "Restarting MariaDB"
+  systemd: 
+    name: mariadb
+    state: restarted
+- 
+  blockinfile: 
+    block: "     URIEncoding=\"UTF-8\"\n"
+    insertbefore: connectionTimeout="20000"
+    path: /usr/share/tomcat/conf/server.xml
+    regexp: URIEncoding="UTF-8"
+  name: "Setting Tomcat to UTF-8"
+- 
+  ignore_errors: true
+  name: "Generating Java KeyStore Certs"
+  shell: "keytool -genkey -alias Guacamole -keyalg RSA -keysize 4096 -keystore /usr/share/tomcat/webapps/.keystore -storepass Guac2019 -keypass Guac2019 -noprompt -dname \"CN='', OU='', O='', L='', S='', C=''\"\n"
+- 
+  command: "mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.ori.bkp"
+  ignore_errors: true
+  name: "Backing up Original Nginx Configuration to /etc/nginx/conf.d/default.conf.ori.bkp"
+- 
+  ignore_errors: true
+  name: "Generating SSL Certs"
+  shell: "openssl req -x509 -sha512 -nodes -days 365 -newkey rsa:4096 -keyout /etc/nginx/guacamole.key -out /etc/nginx/guacamole.crt -subj \"/C=''/ST=''/L=''/O=''/OU=''/CN=''\"\n"
+- 
+  name: "Restarting and Enabling Nginx"
+  systemd: 
+    enabled: true
+    name: nginx
+    state: restarted
+- 
+  name: "Setting httpd_can_network_connect flag on and keep it persistent across reboots"
+  seboolean: 
+    name: "{{ item }}"
+    persistent: true
+    state: true
+  with_items: 
+    - httpd_can_network_connect
+    - httpd_can_network_relay
+    - tomcat_can_network_connect_db
+- 
+  name: "Allow Jar File Permissions"
+  sefcontext: 
+    setype: tomcat_exec_t
+    state: present
+    target: "{{ item }}"
+  with_items: 
+    - /var/lib/guacamole/guacamole.war
+    - /var/lib/guacamole/extensions/guacamole-auth-jdbc-mysql-1.1.0.jar
+    - /var/lib/guacamole/lib/mysql-connector-java-8.0.16.jar
+- 
+  command: "{{ item }}"
+  name: "Configuring SELINUX"
+  with_items: 
+    - "restorecon -v /var/lib/guacamole/guacamole.war"
+    - "restorecon -v /var/lib/guacamole/extensions/guacamole-auth-jdbc-mysql-1.1.0.jar"
+    - "restorecon -v /var/lib/guacamole/lib/mysql-connector-java-8.0.16.jar"
+- 
+  firewalld: 
+    permanent: true
+    port: "{{ item }}/tcp"
+    state: enabled
+  with_items: 
+    - 8080
+    - 80
+    - 443
+    - 8443
+- 
+  name: "Restarting and Enabling FirewallD"
+  systemd: 
+    enabled: true
+    name: firewalld
+    state: restarted
+-
+  blockinfile:
+    block: |
+      [Unit]
+      Description=Guacamole Server
+      Documentation=man:guacd(8)
+      After=network.target
+
+      [Service]
+      User=guacadmin
+      ExecStart=/usr/local/sbin/guacd -f
+      Restart=on-abnormal
+    
+      [Install]
+      WantedBy=multi-user.target
+    create: true
+    path: /etc/systemd/system/guacd.service
+  name: "Changing Default Guacamole User"
